@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign QA Checklist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDF5E6; /* Soft, light gold background */
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: auto;
+        }
+        .checklist-item {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+        .checklist-item.completed {
+            background-color: #F3EFE0; /* A slightly darker shade of the new background */
+        }
+        .checklist-item.completed .item-text {
+            text-decoration: line-through;
+            color: #94a3b8; /* Slate gray color */
+        }
+        /* Custom styles for progress bar */
+        progress::-webkit-progress-bar {
+            background-color: #e2e8f0; /* Light gray */
+            border-radius: 9999px;
+        }
+        progress::-webkit-progress-value {
+            background-color: #0B5585; /* Deep corporate blue */
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+        }
+        progress::-moz-progress-bar {
+            background-color: #0B5585; /* Deep corporate blue */
+            border-radius: 9999px;
+            transition: width 0.3s ease-in-out;
+        }
+        .modal {
+            background-color: rgba(15, 23, 42, 0.7); /* Dark semi-transparent background */
+        }
+        .tab-btn {
+            background-color: #cbd5e1; /* Light gray */
+            color: #334155; /* Dark slate */
+        }
+        .tab-btn.active {
+            background-color: #0B5585; /* Deep corporate blue */
+            color: white;
+            box-shadow: 0 4px 10px rgba(11, 85, 133, 0.2);
+            transform: translateY(-2px);
+        }
+        .sub-tab-btn {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .sub-tab-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <main class="container bg-white rounded-2xl shadow-2xl p-6 md:p-10 lg:flex lg:space-x-12">
+        <!-- Main Checklist Section -->
+        <div class="lg:w-2/3">
+            <header class="flex items-center space-x-4 mb-8 pb-4 border-b border-gray-200">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight">Campaign QA Checklist</h1>
+                <span class="text-4xl">✅</span>
+            </header>
+
+            <!-- DSP Selector Tabs -->
+            <div class="flex flex-wrap space-x-2 p-2 rounded-xl bg-slate-100 mb-6 shadow-inner">
+                <button id="tab-dv360" class="tab-btn active font-medium py-2 px-4 rounded-xl transition-all">DV360</button>
+                <button id="tab-ttd" class="tab-btn font-medium py-2 px-4 rounded-xl transition-all">The Trade Desk</button>
+                <button id="tab-amazon" class="tab-btn font-medium py-2 px-4 rounded-xl transition-all">Amazon Ads</button>
+            </div>
+
+            <!-- DV360 Sub-Tabs (Dynamically shown) -->
+            <div id="dv360-sub-tabs" class="hidden flex flex-wrap space-x-2 mb-6 transition-all duration-300 ease-in-out">
+                <button id="sub-tab-all" class="sub-tab-btn active text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">All</button>
+                <button id="sub-tab-youtube" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">YouTube</button>
+                <button id="sub-tab-display" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">Display</button>
+                <button id="sub-tab-video" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">Video</button>
+                <button id="sub-tab-native" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">Native</button>
+                <button id="sub-tab-ctv" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">CTV</button>
+            </div>
+            
+            <!-- TTD Sub-Tabs (Dynamically shown) -->
+            <div id="ttd-sub-tabs" class="hidden flex flex-wrap space-x-2 mb-6 transition-all duration-300 ease-in-out">
+                <button id="sub-tab-ttd-all" class="sub-tab-btn active text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">All</button>
+                <button id="sub-tab-ttd-display" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">Display</button>
+                <button id="sub-tab-ttd-video" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">Video</button>
+                <button id="sub-tab-ttd-ctv" class="sub-tab-btn text-sm font-semibold py-1.5 px-3 rounded-lg transition-colors">CTV</button>
+            </div>
+
+
+            <!-- Audit Meter -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xl font-bold text-slate-800">Audit Score: <span id="audit-score">0%</span></span>
+                    <span class="text-sm text-gray-600"><span id="completed-count">0</span> / <span id="total-count">0</span> Items</span>
+                </div>
+                <progress id="audit-progress" class="w-full h-2.5 rounded-full" value="0" max="100"></progress>
+                <div class="flex space-x-3 mt-4">
+                    <button id="view-report-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-lg text-sm shadow transition-colors">
+                        View & Copy Report
+                    </button>
+                    <button id="reset-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-5 rounded-lg text-sm shadow transition-colors">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <div id="checklist-container">
+                <!-- Checklist items will be injected here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Tips and Best Practices Sidebar -->
+        <div class="lg:w-1/3 mt-10 lg:mt-0 bg-blue-50 rounded-2xl p-8 shadow-inner border border-blue-100">
+            <header class="flex items-center space-x-3 mb-6">
+                <h2 class="text-2xl font-bold text-blue-700">Quick Tips & Best Practices</h2>
+                <span class="text-2xl">💡</span>
+            </header>
+            <div class="space-y-6">
+                <!-- Tip 1 -->
+                <div class="p-4 bg-white rounded-xl shadow-md border-l-4 border-blue-400">
+                    <h3 class="font-bold text-gray-800 mb-1">Start with the Goal</h3>
+                    <p class="text-sm text-gray-600">Always begin by understanding the campaign's core objective to ensure all settings are aligned with the strategy.</p>
+                </div>
+                <!-- Tip 2 -->
+                <div class="p-4 bg-white rounded-xl shadow-md border-l-4 border-blue-400">
+                    <h3 class="font-bold text-gray-800 mb-1">Check Inventory Sources</h3>
+                    <p class="text-sm text-gray-600">Verify that line item's inventory sources (private deals, open exchange) are correctly configured to reach the target audience.</p>
+                </div>
+                <!-- Tip 3 -->
+                <div class="p-4 bg-white rounded-xl shadow-md border-l-4 border-blue-400">
+                    <h3 class="font-bold text-gray-800 mb-1">Leverage Audience Lists</h3>
+                    <p class="text-sm text-gray-600">Ensure all relevant first- and third-party audience lists are applied to line items to improve targeting accuracy.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto transform transition-all">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-blue-600">QA Audit Report</h2>
+                <button id="close-report-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="report-content" class="text-gray-700 space-y-4">
+                <!-- Report content will be injected here -->
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="copy-report-text-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-lg text-sm shadow transition-colors">
+                    Copy Report Text
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const checklistData = {
+                dv360: {
+                    name: 'DV360',
+                    platforms: {
+                        all: {
+                            levels: ['Campaign', 'IO', 'LI', 'Creative'],
+                            items: {
+                                Campaign: ['Naming Convention', 'Budget (Internal working file)', 'Flight Dates', 'Frequency Settings'],
+                                IO: ['IO Name (Includes tactic & APEX IO)', 'IO Budget & Flight Dates', 'IO Pacing strategy is aligned', 'IO Frequency Cap applied correctly'],
+                                LI: ['LI Name (Includes non-YT targeting)', 'Daily Budget', 'Inventory (Open Exchange, PMPs)', 'Language and Geo', 'Demo exclusion (remove \'Unknown\')', 'Category exclusion lists applied', 'Viewability (70% minimum)', 'Audiences are based on proposal', '3P Verification applied (if needed)'],
+                                Creative: ['Creative audit completed', 'Correct tracker is selected', 'Creative name is same as tracker', 'Landing page is functional']
+                            }
+                        },
+                        youtube: {
+                            levels: ['Campaign', 'IO', 'Ad Group', 'Creative'],
+                            items: {
+                                Campaign: ['Campaign Naming', 'Budget', 'Flight Dates', 'Frequency'],
+                                IO: ['IO Name (includes tactic & APEX IO)', 'IO Budget & Flight Dates', 'IO Pacing strategy is aligned'],
+                                'Ad Group': ['Ad Group Naming', 'Category exclusions applied', 'Audiences are based on proposal', 'Demo exclusion (remove \'Unknown\')'],
+                                Creative: ['Creative audit completed', 'Creative name is same as tracker', 'Correct tracker is selected', 'YT URL length is accurate', 'Landing page is functional']
+                            }
+                        },
+                        display: {
+                            levels: ['Campaign', 'IO', 'LI', 'Creative'],
+                            items: {
+                                Campaign: ['Campaign Naming', 'Budget', 'Flight Dates'],
+                                IO: ['IO Name', 'IO Budget & Flight Dates', 'IO Pacing strategy is aligned'],
+                                LI: ['LI Naming', 'Daily Budget', 'Inventory (Open Exchange, PMPs)', 'Language and Geo', 'Demo exclusion (remove \'Unknown\')', 'Category exclusion lists applied', 'Position is Display', 'Viewability (70% minimum)'],
+                                Creative: ['Creative audit completed', 'Correct tracker is selected', 'Landing page is functional', 'Static image is not HTML']
+                            }
+                        },
+                        video: {
+                            levels: ['Campaign', 'IO', 'LI', 'Creative'],
+                            items: {
+                                Campaign: ['Campaign Naming', 'Budget', 'Flight Dates'],
+                                IO: ['IO Naming', 'IO Budget & Flight Dates'],
+                                LI: ['LI Naming', 'Daily Budget', 'Inventory', 'Language and Geo', 'Demo exclusion', 'Viewability (70% minimum)'],
+                                Creative: ['Creative audit completed', 'Correct tracker is selected', 'Landing page functional']
+                            }
+                        },
+                        native: {
+                            levels: ['Campaign', 'IO', 'LI', 'Creative'],
+                            items: {
+                                Campaign: ['Campaign Naming', 'Budget', 'Flight Dates'],
+                                IO: ['IO Naming', 'IO Budget & Flight Dates'],
+                                LI: ['LI Naming', 'Daily Budget', 'Inventory (Open Exchange)', 'Language and Geo', 'Demo exclusion', 'Position is Native'],
+                                Creative: ['Creative audit completed', 'Correct tracker selected', 'Landing page functional']
+                            }
+                        },
+                        ctv: {
+                            levels: ['Campaign', 'IO', 'LI', 'Creative'],
+                            items: {
+                                Campaign: ['Campaign Naming', 'Budget', 'Flight Dates', 'Frequency Settings'],
+                                IO: ['IO Naming', 'IO Budget & Flight Dates', 'IO Pacing is aligned'],
+                                LI: ['LI Naming', 'Daily Budget', 'Inventory (Open Exchange)', 'Language and Geo', 'Demo exclusion'],
+                                Creative: ['Creative audit completed', 'Correct tracker selected', 'Landing page functional']
+                            }
+                        }
+                    }
+                },
+                ttd: {
+                    name: 'The Trade Desk',
+                    platforms: {
+                        all: {
+                            levels: ['Campaign', 'Ad Group', 'Creative'],
+                            items: {
+                                Campaign: ['Naming Convention', 'Budget (Internal working file)', 'Flight Dates', 'Primary KPI', 'Secondary KPI', 'Frequency'],
+                                'Ad Group': ['Naming Convention (includes audience name)', 'Audience (including Demo)', 'Category (exclusion of Keyword lists)', 'KPI threshold', 'Geo', 'Site/App (Site exclusion lists should be selected)'],
+                                Creative: ['Creative audit completed', 'Correct tracker is selected', 'Landing page is functional']
+                            }
+                        },
+                        display: {
+                            levels: ['Campaign', 'Ad Group', 'Creative'],
+                            items: {
+                                Campaign: ['Naming Convention', 'Budget (Internal working file)', 'Flight Dates', 'Primary KPI', 'Secondary KPI', 'Frequency'],
+                                'Ad Group': ['Naming Convention (includes audience name)', 'Audience (including Demo)', 'Category (exclusion of Keyword lists)', 'KPI threshold', 'Geo', 'Site/App (Site exclusion lists should be selected)'],
+                                Creative: ['Creative is correctly assigned', 'Creative size matches ad group sizing', 'Correct trackers are selected', 'Landing page is functional']
+                            }
+                        },
+                        video: {
+                            levels: ['Campaign', 'Ad Group', 'Creative'],
+                            items: {
+                                Campaign: ['Naming Convention', 'Budget (Internal working file)', 'Flight Dates', 'Primary KPI', 'Secondary KPI', 'Frequency'],
+                                'Ad Group': ['Naming Convention (includes audience name)', 'Audience (including Demo)', 'Category (exclusion of Keyword lists)', 'KPI threshold', 'Geo', 'Site/App (Site exclusion lists should be selected)'],
+                                Creative: ['Creative is correctly assigned', 'Video duration matches specs', 'VAST tag is valid', 'Correct trackers are selected', 'Landing page is functional']
+                            }
+                        },
+                        ctv: {
+                            levels: ['Campaign', 'Ad Group', 'Creative'],
+                            items: {
+                                Campaign: ['Naming Convention', 'Budget (Internal working file)', 'Flight Dates', 'Primary KPI', 'Secondary KPI', 'Frequency'],
+                                'Ad Group': ['Naming Convention (includes audience name)', 'Audience (including Demo)', 'Category (exclusion of Keyword lists)', 'KPI threshold', 'Geo', 'Site/App (Site exclusion lists should be selected)'],
+                                Creative: ['Creative is correctly assigned', 'Video duration matches specs', 'Correct trackers are selected', 'Landing page is functional']
+                            }
+                        }
+                    }
+                },
+                amazon: {
+                    name: 'Amazon Ads',
+                    platforms: {
+                        all: {
+                            levels: ['Campaign', 'Order', 'Line Item', 'Creative'],
+                            items: {
+                                Campaign: ['Campaign Naming', 'Campaign Budget', 'Flight Dates'],
+                                Order: ['Order Name', 'Order Budget', 'Order Pacing'],
+                                'Line Item': ['Line Item Name', 'Targeting (Geo, Language, Audience)', 'Creative Assets are assigned', 'Landing Page is functional', 'Bid Strategy is correct'],
+                                Creative: ['Creative Naming', 'Click-through URL', '3P Impression/Click Trackers applied']
+                            }
+                        }
+                    }
+                }
+            };
+
+            const stateKey = 'campaignChecklistState';
+            let currentState = {};
+            let currentDSP = 'dv360';
+            let currentPlatform = 'all';
+
+            const checklistContainer = document.getElementById('checklist-container');
+            const totalCountSpan = document.getElementById('total-count');
+            const completedCountSpan = document.getElementById('completed-count');
+            const auditScoreSpan = document.getElementById('audit-score');
+            const auditProgress = document.getElementById('audit-progress');
+            const viewReportBtn = document.getElementById('view-report-btn');
+            const resetButton = document.getElementById('reset-btn');
+            const reportModal = document.getElementById('report-modal');
+            const reportContentDiv = document.getElementById('report-content');
+            const closeReportModalBtn = document.getElementById('close-report-modal');
+            const copyReportTextBtn = document.getElementById('copy-report-text-btn');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const dv360SubTabs = document.getElementById('dv360-sub-tabs');
+            const ttdSubTabs = document.getElementById('ttd-sub-tabs');
+
+            const saveState = () => {
+                localStorage.setItem(stateKey, JSON.stringify(currentState));
+            };
+
+            const loadState = () => {
+                const savedState = localStorage.getItem(stateKey);
+                if (savedState) {
+                    currentState = JSON.parse(savedState);
+                } else {
+                    currentState = { dv360: { platforms: {} }, ttd: { platforms: {} }, amazon: { platforms: {} } };
+                }
+            };
+            
+            const renderChecklist = (dsp, platform) => {
+                currentDSP = dsp;
+                currentPlatform = platform;
+                checklistContainer.innerHTML = '';
+                
+                const dspData = checklistData[dsp];
+                const platformData = dspData.platforms[platform];
+                let allItemsCount = 0;
+
+                // Show/hide sub-tabs based on DSP
+                dv360SubTabs.classList.add('hidden');
+                ttdSubTabs.classList.add('hidden');
+
+                if (dsp === 'dv360') {
+                    dv360SubTabs.classList.remove('hidden');
+                } else if (dsp === 'ttd') {
+                    ttdSubTabs.classList.remove('hidden');
+                }
+
+                platformData.levels.forEach(level => {
+                    let levelColorClass;
+                    // Determine color based on the level
+                    switch (level) {
+                        case 'Campaign':
+                        case 'Creative':
+                            levelColorClass = 'text-blue-700';
+                            break;
+                        case 'IO':
+                        case 'Order':
+                        case 'Ad Group':
+                            levelColorClass = 'text-green-700';
+                            break;
+                        case 'LI':
+                        case 'Line Item':
+                            levelColorClass = 'text-purple-700';
+                            break;
+                        default:
+                            levelColorClass = 'text-gray-700'; // Default color
+                    }
+                    
+                    const levelHeader = document.createElement('h2');
+                    levelHeader.className = `text-xl md:text-2xl font-bold ${levelColorClass} mb-4 border border-gray-400 rounded-lg shadow-md p-3`;
+                    levelHeader.textContent = `${level} Level`;
+                    checklistContainer.appendChild(levelHeader);
+
+                    const itemsGrid = document.createElement('div');
+                    itemsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 mb-8';
+                    
+                    const levelItems = platformData.items[level];
+                    levelItems.forEach((itemText, index) => {
+                        const itemId = `${dsp}-${platform}-${level.replace(/\s+/g, '-')}-${index}`;
+                        const isCompleted = currentState[dsp].platforms[itemId] || false;
+                        
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = `checklist-item rounded-lg p-4 shadow-sm transition-all flex items-center space-x-3 ${isCompleted ? 'completed' : ''}`;
+                        itemDiv.innerHTML = `
+                            <input type="checkbox" data-qa-level="${level}" id="${itemId}" class="h-5 w-5 rounded-full text-blue-600 focus:ring-blue-500" ${isCompleted ? 'checked' : ''}>
+                            <label for="${itemId}" class="text-gray-700 font-medium item-text flex-1">${itemText}</label>
+                        `;
+                        itemsGrid.appendChild(itemDiv);
+                        allItemsCount++;
+                    });
+                    checklistContainer.appendChild(itemsGrid);
+                });
+
+                totalCountSpan.textContent = allItemsCount;
+                updateAuditScore();
+            };
+
+            const updateAuditScore = () => {
+                const allCheckboxes = checklistContainer.querySelectorAll('input[type="checkbox"]');
+                const completedItems = Array.from(allCheckboxes).filter(cb => cb.checked).length;
+                const totalItems = allCheckboxes.length;
+                const score = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+                completedCountSpan.textContent = completedItems;
+                totalCountSpan.textContent = totalItems;
+                auditScoreSpan.textContent = `${score.toFixed(0)}%`;
+                auditProgress.value = score;
+            };
+
+            const generateReportHTML = () => {
+                const platformData = checklistData[currentDSP].platforms[currentPlatform];
+                const allCheckboxes = checklistContainer.querySelectorAll('input[type="checkbox"]');
+                const completedItems = Array.from(allCheckboxes).filter(cb => cb.checked).length;
+                const totalItems = allCheckboxes.length;
+                const missedItems = totalItems - completedItems;
+                const score = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+                
+                let reportHTML = `
+                    <p class="text-lg font-bold">QA Audit Score: <span class="text-blue-600">${score.toFixed(0)}%</span></p>
+                    <p>Completed: ${completedItems}/${totalItems}</p>
+                    <p>Missed: ${missedItems}</p>
+                `;
+                
+                if (missedItems > 0) {
+                    reportHTML += `<h3 class="text-xl font-bold mt-6 mb-2 text-red-600">Missed Items:</h3>`;
+                    platformData.levels.forEach(level => {
+                        const missedAtLevel = checklistContainer.querySelectorAll(`input[type="checkbox"][data-qa-level="${level}"]:not(:checked)`);
+                        if (missedAtLevel.length > 0) {
+                            reportHTML += `<h4 class="text-lg font-semibold mt-4">${level} Level:</h4><ul class="list-disc pl-5 space-y-1">`;
+                            missedAtLevel.forEach(item => {
+                                const label = item.nextElementSibling.textContent.trim();
+                                reportHTML += `<li>${label}</li>`;
+                            });
+                            reportHTML += `</ul>`;
+                        }
+                    });
+                } else {
+                    reportHTML += `<p class="mt-6 text-green-600 font-semibold text-center">All items completed! Great job!</p>`;
+                }
+                return reportHTML;
+            };
+
+            const generateReportText = () => {
+                const platformData = checklistData[currentDSP].platforms[currentPlatform];
+                const allCheckboxes = checklistContainer.querySelectorAll('input[type="checkbox"]');
+                const completedItems = Array.from(allCheckboxes).filter(cb => cb.checked).length;
+                const totalItems = allCheckboxes.length;
+                const missedItems = totalItems - completedItems;
+                const score = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+                let reportText = `QA Audit Score: ${score.toFixed(0)}%\n`;
+                reportText += `Completed: ${completedItems}/${totalItems}\n`;
+                reportText += `Missed: ${missedItems}\n\n`;
+                
+                if (missedItems > 0) {
+                    reportText += "Missed Items:\n\n";
+                    platformData.levels.forEach(level => {
+                        const missedAtLevel = checklistContainer.querySelectorAll(`input[type="checkbox"][data-qa-level="${level}"]:not(:checked)`);
+                        if (missedAtLevel.length > 0) {
+                            reportText += `${level} Level:\n`;
+                            missedAtLevel.forEach(item => {
+                                const label = item.nextElementSibling.textContent.trim();
+                                reportText += `- ${label}\n`;
+                            });
+                            reportText += "\n";
+                        }
+                    });
+                } else {
+                    reportText += "All items completed! Great job!";
+                }
+                return reportText;
+            };
+
+            const copyReportToClipboard = () => {
+                const reportText = generateReportText();
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = reportText;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                    copyReportTextBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyReportTextBtn.textContent = 'Copy Report Text';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy text', err);
+                }
+                document.body.removeChild(tempTextArea);
+            };
+
+            const resetChecklist = () => {
+                const allCheckboxes = checklistContainer.querySelectorAll('input[type="checkbox"]');
+                allCheckboxes.forEach(item => {
+                    item.checked = false;
+                    const parent = item.closest('.checklist-item');
+                    if (parent) {
+                        parent.classList.remove('completed');
+                    }
+                });
+                currentState[currentDSP].platforms = {};
+                saveState();
+                updateAuditScore();
+            };
+
+            loadState();
+            renderChecklist(currentDSP, currentPlatform);
+
+            // Main Tab Event Listeners
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const dsp = button.id.replace('tab-', '');
+                    
+                    // Reset sub-tabs and render based on selected DSP
+                    document.querySelectorAll('#dv360-sub-tabs button').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('#ttd-sub-tabs button').forEach(btn => btn.classList.remove('active'));
+                    document.getElementById('sub-tab-all').classList.add('active'); // Default to 'all' for DV360
+                    document.getElementById('sub-tab-ttd-all').classList.add('active'); // Default to 'all' for TTD
+                    renderChecklist(dsp, 'all');
+                });
+            });
+
+            // DV360 Sub-Tab Event Listeners
+            document.querySelectorAll('#dv360-sub-tabs button').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('#dv360-sub-tabs button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const platform = button.id.replace('sub-tab-', '');
+                    renderChecklist('dv360', platform);
+                });
+            });
+
+            // TTD Sub-Tab Event Listeners
+            document.querySelectorAll('#ttd-sub-tabs button').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('#ttd-sub-tabs button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const platform = button.id.replace('sub-tab-ttd-', '');
+                    renderChecklist('ttd', platform);
+                });
+            });
+            
+            // General Event Listeners
+            checklistContainer.addEventListener('change', (event) => {
+                const checkbox = event.target;
+                if (checkbox.type === 'checkbox') {
+                    const parent = checkbox.closest('.checklist-item');
+                    if (parent) {
+                        if (checkbox.checked) {
+                            parent.classList.add('completed');
+                        } else {
+                            parent.classList.remove('completed');
+                        }
+                    }
+                    currentState[currentDSP].platforms[checkbox.id] = checkbox.checked;
+                    saveState();
+                    updateAuditScore();
+                }
+            });
+
+            viewReportBtn.addEventListener('click', () => {
+                const reportHtml = generateReportHTML();
+                reportContentDiv.innerHTML = reportHtml;
+                reportModal.classList.remove('hidden');
+                reportModal.classList.add('flex');
+            });
+            
+            closeReportModalBtn.addEventListener('click', () => {
+                reportModal.classList.remove('flex');
+                reportModal.classList.add('hidden');
+            });
+
+            copyReportTextBtn.addEventListener('click', copyReportToClipboard);
+            resetButton.addEventListener('click', resetChecklist);
+        });
+    </script>
+</body>
+</html>
